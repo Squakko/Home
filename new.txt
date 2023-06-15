@@ -1,0 +1,266 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+File 1: Form1
+--------------------
+using System;
+using System.Collections.Generic;
+using System.ComponentModel;
+using System.Data;
+using System.Drawing;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+using System.Windows.Forms;
+using System.Data.SqlClient;
+
+namespace Practices
+{
+    public partial class Form1 : Form
+    {
+        public Form1()
+        {
+            InitializeComponent();
+        }
+
+        private void Form1_Load(object sender, EventArgs e)
+        {
+            LayDSMH();
+        }
+
+        public void LayDSMH()
+        {
+            var conn = new SqlConnection(Utilities.connectionString);
+
+            var command = conn.CreateCommand();
+            command.CommandText = "Select * from MatHang";
+
+            var adapter = new SqlDataAdapter(command);
+            var table = new DataTable();
+
+
+            conn.Open();
+            adapter.Fill(table);
+            conn.Close();
+            conn.Dispose();
+
+            dgvMatHang.DataSource = table;
+        }
+
+        private void textBox1_TextChanged(object sender, EventArgs e)
+        {
+            string find = textBox1.Text;
+
+            var conn = new SqlConnection(Utilities.connectionString);
+
+            var command = conn.CreateCommand();
+            command.CommandText = $"Select * from MatHang where TenMatHang like '%{find}%'";
+
+            var adapter = new SqlDataAdapter(command);
+            var table = new DataTable();
+
+            
+
+            conn.Open();
+            adapter.Fill(table);
+            conn.Close();
+            conn.Dispose();
+
+            dgvMatHang.DataSource = table;
+        }
+
+        private void comboBox2_SelectedIndexChanged(object sender, EventArgs e)
+        {
+            int id;
+            var result = int.TryParse((cboLoai.SelectedIndex + 1).ToString(), out id);
+
+            string find = textBox1.Text;
+
+            var conn = new SqlConnection(Utilities.connectionString);
+
+            var command = conn.CreateCommand();
+            command.CommandText = $"Select * from MatHang where MaLoai = '{id}'";
+
+            var adapter = new SqlDataAdapter(command);
+            var table = new DataTable();
+
+
+
+            conn.Open();
+            adapter.Fill(table);
+            conn.Close();
+            conn.Dispose();
+
+            dgvMatHang.DataSource = table;
+        }
+
+        private void dgvMatHang_SelectionChanged(object sender, EventArgs e)
+        {
+            if (dgvMatHang.SelectedRows.Count > 0)
+            {
+                DataGridViewRow selectedRow = dgvMatHang.SelectedRows[0];
+                string ValuetenMH = selectedRow.Cells["TenMatHang"].Value.ToString();
+            }
+        }
+
+        private void dgvMatHang_CellContentClick(object sender, DataGridViewCellEventArgs e)
+        {
+
+        }
+
+        private void btn_LayThongTin_Click(object sender, EventArgs e)
+        {
+            if (dgvMatHang.SelectedRows.Count > 0)
+            {
+                DataGridViewRow selectedRow = dgvMatHang.SelectedRows[0];
+                txtTenMH.Text = selectedRow.Cells["TenMatHang"].Value.ToString();
+                txtDonGia.Text = selectedRow.Cells["DonGia"].Value.ToString();
+            }
+        }
+
+        private void OpenForm2()
+        {
+            Form2 frm2 = new Form2(this);
+            frm2.ShowDialog();
+        }
+
+        private void button1_Click(object sender, EventArgs e)
+        {
+            OpenForm2();
+        }
+
+        public void ShowMessage()
+        {
+            MessageBox.Show("Đã thay đổi");
+        }
+
+        private void button2_Click(object sender, EventArgs e)
+        {
+            if (dgvMatHang.SelectedRows.Count > 0)
+            {
+                var selectedRow = dgvMatHang.SelectedRows[0];
+                
+
+                var conn = new SqlConnection(Utilities.connectionString);
+
+                var command = conn.CreateCommand();
+                command.CommandText = $"Delete from MatHang Where MaMatHang = @MaMatHang";
+
+                command.Parameters.AddWithValue("MaMatHang", selectedRow.Cells["MaMatHang"].Value.ToString());
+
+                conn.Open();
+                int sodonganhhuong = command.ExecuteNonQuery();
+                conn.Dispose();
+
+                LayDSMH();
+                MessageBox.Show("Xóa thành công");
+            } else
+            {
+                MessageBox.Show("Bạn chưa chọn hàng để xóa");
+            }
+        }
+    }
+}
+
+
+
+
+
+
+
+File 2: Form2
+----------------
+using System;
+using System.Collections.Generic;
+using System.ComponentModel;
+using System.Data;
+using System.Data.SqlClient;
+using System.Drawing;
+using System.Linq;
+using System.Text;
+using System.Text.RegularExpressions;
+using System.Threading.Tasks;
+using System.Windows.Forms;
+
+namespace Practices
+{
+    public partial class Form2 : Form
+    {
+        private Form1 form1 = new Form1();
+        public Form2(Form1 frm1)
+        {
+            InitializeComponent();
+            form1 = frm1;
+        }
+
+        private void Form2_FormClosing(object sender, FormClosingEventArgs e)
+        {
+            form1.LayDSMH();
+        }
+
+        private void btn_them_Click(object sender, EventArgs e)
+        {
+            var conn = new SqlConnection(Utilities.connectionString);
+            var command = conn.CreateCommand();
+
+            var useDB = conn.CreateCommand();
+            useDB.CommandText = "Use QLBanHang";
+            command.CommandText = $"INSERT INTO MatHang VALUES(N'{txtTenMH.Text}', {txtSoLuong.Text}, {txtDonGia.Text}, 1, {(cboLoai.SelectedIndex + 1).ToString()})";
+
+            conn.Open();
+            useDB.ExecuteNonQuery();
+            command.ExecuteNonQuery();
+            conn.Close();
+            conn.Dispose();
+            //if tryparse thành công thì chạy đoạn sau
+            MessageBox.Show("Thêm thành công");
+        }
+
+        private void button1_Click(object sender, EventArgs e)
+        {
+            MessageBox.Show((cboLoai.SelectedIndex + 1).ToString());
+        }
+
+     //   CREATE PROCEDURE ThemMatHangMoi
+     //   @TenMatHang nvarchar(69), @SoLuong int, @DonGia int, @MaNCC int, @MaLoai int
+     //   as
+	    //INSERT INTO MatHang VALUES(@TenMatHang, @SoLuong, @DonGia, @MaNCC, @MaLoai)
+     //   go
+
+     //   exec ThemMatHangMoi N'Dầu ăn hạnh phúk2', 69, 69000, 1, 2
+     //   go
+    }
+}
+
